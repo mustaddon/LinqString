@@ -4,8 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 
 
-var serviceProvider = new ServiceCollection().AddMemoryCache().BuildServiceProvider();
-
 var items = Enumerable.Range(0, 10).Select(x => new
 {
     Even = x % 2 == 0,
@@ -34,12 +32,14 @@ Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { W
 
 // Dynamic expressions caching (OPTIONAL)
 
-var neverExpiredCache = items
-    .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
-    .ToList();
+var someServiceProvider = new ServiceCollection().AddMemoryCache().BuildServiceProvider();
 
 var slidingCache = items
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"],
-        serviceProvider.GetRequiredService<IMemoryCache>(), 
+        someServiceProvider.GetRequiredService<IMemoryCache>(), 
         o => o.SetSlidingExpiration(TimeSpan.FromMilliseconds(30)))
+    .ToList();
+
+var neverExpiredCache = items
+    .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
     .ToList();
