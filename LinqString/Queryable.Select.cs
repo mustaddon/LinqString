@@ -1,9 +1,6 @@
 ﻿using LinqString._internal;
 using Microsoft.Extensions.Caching.Memory;
-using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace LinqString;
 

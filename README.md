@@ -1,4 +1,4 @@
-# LinqString [![NuGet version](https://badge.fury.io/nu/LinqString.svg?v001)](http://badge.fury.io/nu/LinqString)
+# LinqString [![NuGet version](https://badge.fury.io/nu/LinqString.svg?v100)](http://badge.fury.io/nu/LinqString)
 IQueryable.Select by property names (EF compatible extensions)
 
 
