@@ -1,6 +1,10 @@
 ﻿using LinqString;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 
+
+var serviceProvider = new ServiceCollection().AddMemoryCache().BuildServiceProvider();
 
 var items = Enumerable.Range(0, 10).Select(x => new
 {
@@ -25,3 +29,17 @@ var result = items
     .ToList();
 
 Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+
+
+
+// dynamic expressions caching
+
+var neverExpiredCache = items
+    .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
+    .ToList();
+
+var slidingCache = items
+    .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"],
+        serviceProvider.GetRequiredService<IMemoryCache>(), 
+        o => o.SetSlidingExpiration(TimeSpan.FromMilliseconds(30)))
+    .ToList();
