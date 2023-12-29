@@ -1,7 +1,7 @@
 ﻿using LinqString;
 
 
-var items = Enumerable.Range(0, 10).Select(x => new
+var someQeryableSource = Enumerable.Range(0, 10).Select(x => new
 {
     Even = x % 2 == 0,
     Prop1 = x,
@@ -18,7 +18,7 @@ var items = Enumerable.Range(0, 10).Select(x => new
 }).AsQueryable();
 
 
-var result = items
+var result = someQeryableSource
     .OrderBy("Even", ">Prop2.Prop21")
     .Select("Prop1", "Prop2.Prop22", "Prop3.Prop32")
     .ToList();
@@ -31,12 +31,12 @@ Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { W
 
 var someServiceProvider = new ServiceCollection().AddMemoryCache().BuildServiceProvider();
 
-var slidingCache = items
+var withSlidingCache = someQeryableSource
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"],
         someServiceProvider.GetRequiredService<IMemoryCache>(), 
         o => o.SetSlidingExpiration(TimeSpan.FromMilliseconds(30)))
     .ToList();
 
-var neverExpiredCache = items
+var withNeverExpiredCache = someQeryableSource
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
     .ToList();
