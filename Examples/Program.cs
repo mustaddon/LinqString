@@ -32,7 +32,7 @@ Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { W
 
 
 
-// dynamic expressions caching
+// Dynamic expressions caching (OPTIONAL)
 
 var neverExpiredCache = items
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
