@@ -8,7 +8,9 @@ internal static partial class TypeExt
         return _defaultValueMethod.MakeGenericMethod(type).Invoke(null, Array.Empty<object>());
     }
 
-    static readonly MethodInfo _defaultValueMethod = typeof(TypeExt).GetMethod(nameof(_defaultValue), BindingFlags.Static | BindingFlags.NonPublic)!;
     static T? _defaultValue<T>() => default;
+
+    static readonly MethodInfo _defaultValueMethod = new Func<int>(_defaultValue<int>)
+        .Method.GetGenericMethodDefinition();
 }
 

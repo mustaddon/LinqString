@@ -23,9 +23,8 @@ public static class EnumerableSelectExtensions
         .Invoke(null, [source, fn])!;
 
 
-    static readonly MethodInfo _select = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-        .First(x => x.Name == nameof(Enumerable.Select) && x.IsGenericMethod && x.HasIEnumerableAndFunc());
-
+    static readonly MethodInfo _select = new Func<IEnumerable<object>, Func<object, object>, IEnumerable<object>>(Enumerable.Select)
+        .Method.GetGenericMethodDefinition();
 
     const bool _nullsafeObjects = true;
     const bool _nullsafeEnumerables = true;

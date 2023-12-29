@@ -47,7 +47,7 @@ public static class EnumerableOrderExtensions
 
         var type = typeof(T);
         var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
-        var method = (desc ? _orderByDesc : _orderBy)!.MakeGenericMethod(type, sorter.Method.ReturnType);
+        var method = (desc ? _orderByDesc : _orderBy).MakeGenericMethod(type, sorter.Method.ReturnType);
 
         return Then((IOrderedEnumerable<T>)method.Invoke(null, [source, sorter])!, enumerator, defaultDesc, sorterFactory);
     }
@@ -58,7 +58,7 @@ public static class EnumerableOrderExtensions
         while (enumerator.MoveNext())
         {
             var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
-            var method = (desc ? _thenByDesc : _thenBy)!.MakeGenericMethod(type, sorter.Method.ReturnType);
+            var method = (desc ? _thenByDesc : _thenBy).MakeGenericMethod(type, sorter.Method.ReturnType);
 
             source = (IOrderedEnumerable<T>)method.Invoke(null, [source, sorter])!;
         }
@@ -77,25 +77,18 @@ public static class EnumerableOrderExtensions
     }
 
 
-    delegate (Delegate Fn, bool Desc) SorterFactory(Type type, string path, bool desc);
+    delegate (Delegate, bool) SorterFactory(Type type, string path, bool desc);
 
-    static readonly MethodInfo? _orderBy;
-    static readonly MethodInfo? _orderByDesc;
-    static readonly MethodInfo? _thenBy;
-    static readonly MethodInfo? _thenByDesc;
+    static readonly MethodInfo _orderBy = new Func<IEnumerable<object>, Func<object, object>, IOrderedEnumerable<object>>(Enumerable.OrderBy)
+        .Method.GetGenericMethodDefinition();
 
-    static EnumerableOrderExtensions()
-    {
-        foreach (var x in typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static))
-        {
-            if (x.IsGenericMethod && x.HasIEnumerableAndFunc())
-                switch (x.Name)
-                {
-                    case nameof(Enumerable.OrderBy): _orderBy = x; break;
-                    case nameof(Enumerable.OrderByDescending): _orderByDesc = x; break;
-                    case nameof(Enumerable.ThenBy): _thenBy = x; break;
-                    case nameof(Enumerable.ThenByDescending): _thenByDesc = x; break;
-                };
-        }
-    }
+    static readonly MethodInfo _orderByDesc = new Func<IEnumerable<object>, Func<object, object>, IOrderedEnumerable<object>>(Enumerable.OrderByDescending)
+        .Method.GetGenericMethodDefinition();
+
+    static readonly MethodInfo _thenBy = new Func<IOrderedEnumerable<object>, Func<object, object>, IOrderedEnumerable<object>>(Enumerable.ThenBy)
+        .Method.GetGenericMethodDefinition();
+
+    static readonly MethodInfo _thenByDesc = new Func<IOrderedEnumerable<object>, Func<object,object>, IOrderedEnumerable<object>>(Enumerable.ThenByDescending)
+        .Method.GetGenericMethodDefinition();
+
 }

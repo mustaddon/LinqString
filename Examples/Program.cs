@@ -15,7 +15,7 @@ var someQeryableSource = Enumerable.Range(0, 10).Select(x => new
         Prop31 = xx,
         Prop32 = $"text-{x}-{xx}",
     })
-}).AsQueryable();
+});//.AsQueryable();
 
 
 var result = someQeryableSource

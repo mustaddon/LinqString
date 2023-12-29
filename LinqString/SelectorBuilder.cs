@@ -77,8 +77,8 @@ public static class SelectorBuilder
         return Expression.Call(select, source, lambda);
     }
 
-    static readonly MethodInfo _enumerableSelect = typeof(Enumerable).GetMethods(BindingFlags.Public | BindingFlags.Static)
-        .FirstOrDefault(x => x.Name == nameof(Enumerable.Select) && x.HasIEnumerableAndFunc())!;
+    static readonly MethodInfo _enumerableSelect = new Func<IEnumerable<object>, Func<object, object>, IEnumerable<object>>(Enumerable.Select)
+        .Method.GetGenericMethodDefinition();
 
     static PropData FillData(PropData data, IEnumerable<PropNode> orderedNodes, bool isFilled = false)
     {
