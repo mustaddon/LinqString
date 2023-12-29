@@ -1,7 +1,4 @@
 ﻿using LinqString;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
 
 
 var items = Enumerable.Range(0, 10).Select(x => new
