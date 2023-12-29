@@ -1,4 +1,4 @@
-# LinqString [![NuGet version](https://badge.fury.io/nu/LinqString.svg?v100)](http://badge.fury.io/nu/LinqString)
+# LinqString [![NuGet version](https://badge.fury.io/nu/LinqString.svg?v1)](http://badge.fury.io/nu/LinqString)
 IQueryable.Select by property names (EF compatible extensions)
 
 
@@ -6,14 +6,14 @@ IQueryable.Select by property names (EF compatible extensions)
 using LinqString;
 
 
-var result = someSource
+var result = queryableSource
     .OrderBy("SubObj.Prop1", ">Prop2")
     .Select("Prop1", "Prop2", "SubObj.Prop1")
     .ToList();
 
 // is an analogue of
 
-var analogue = someSource
+var analogue = queryableSource
     .OrderBy(x => x.SubObj.Prop1)
     .ThenByDescending(x => x.Prop2)
     .Select(x => new { 
