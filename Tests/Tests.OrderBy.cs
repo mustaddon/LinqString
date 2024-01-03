@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Tests;
 
 public class TestOrderBy
@@ -41,5 +43,26 @@ public class TestOrderBy
             Assert.That(cachable, Is.EqualTo(test).AsCollection);
         }
 
+    }
+
+    
+    [Test]
+    public async Task EfCore()
+    {
+        using var ctx = new EfCoreContext();
+
+        var query = ctx.Books
+            .Include(x => x.Author);
+
+        var result = await query
+            .OrderBy("Author.FirstName", ">BookId")
+            .ToListAsync();
+
+        var test = await query
+            .OrderBy(x => x.Author!.FirstName).ThenByDescending(x=>x.BookId)
+            .ToListAsync();
+
+
+        Assert.That(result, Is.EqualTo(test).AsCollection);
     }
 }
