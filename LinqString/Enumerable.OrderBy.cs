@@ -33,9 +33,9 @@ public static class EnumerableOrderExtensions
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, params string[] props)
         => ThenByDescending(source, props.AsEnumerable());
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), false, Builder);
+        => Then(source, props.GetEnumerator(), true, Builder);
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), false, CacheProvider(cache, options));
+        => Then(source, props.GetEnumerator(), true, CacheProvider(cache, options));
 
 
     private static IOrderedEnumerable<T>? Order<T>(IEnumerable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
