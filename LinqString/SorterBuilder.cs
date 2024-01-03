@@ -16,7 +16,7 @@ public static class SorterBuilder
         var props = finalPath.Split('.');
         var param = Expression.Parameter(sourceType, null);
         var nullsafe = param.NotNull();
-        var memberExpr = Expression.PropertyOrField(param, props[0]);
+        var memberExpr = Expression.PropertyOrField(param, props[0]) as Expression;
 
         if (props.Length > 1)
             for (var i = 1; i < props.Length; i++)
@@ -25,8 +25,13 @@ public static class SorterBuilder
                 memberExpr = Expression.PropertyOrField(memberExpr, props[i]);
             }
 
+        var returnType = memberExpr.Type.ToNullableType();
+
+        if (memberExpr.Type != returnType)
+            memberExpr = Expression.Convert(memberExpr, returnType);
+
         return Expression.Lambda(
-            Expression.Condition(nullsafe, memberExpr, memberExpr.DefaultValue()),
+            Expression.Condition(nullsafe, memberExpr, Expression.Constant(null, returnType)),
             param);
     }
 

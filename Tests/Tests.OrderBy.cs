@@ -17,11 +17,11 @@ public class TestOrderBy
         }).ToList();
 
         var vars = new (string[], IEnumerable<object?>)[] {
-            (["Even","Obj.Prop2"], items.OrderBy(x=> x?.Even ?? default).ThenBy(x=>x?.Obj?.Prop2 ?? default).ToList()),
-            (["Even",">Obj.Prop2"], items.OrderBy(x=>x?.Even ?? default).ThenByDescending(x=>x?.Obj?.Prop2 ?? default).ToList()),
-            ([">Even","Obj.Prop2"], items.OrderByDescending(x=>x?.Even ?? default).ThenBy(x=>x?.Obj?.Prop2 ?? default).ToList()),
-            ([">Even",">Obj.Prop2"], items.OrderByDescending(x=>x?.Even ?? default).ThenByDescending(x=>x?.Obj?.Prop2 ?? default).ToList()),
-            (["Even","Obj.Type",">Prop1"], items.OrderBy(x=>x?.Even ?? default).ThenBy(x=>x?.Obj?.Type ?? default).ThenByDescending(x=>x?.Prop1 ?? default).ToList()),
+            (["Even","Obj.Prop2"], items.OrderBy(x=> x?.Even).ThenBy(x=>x?.Obj?.Prop2).ToList()),
+            (["Even",">Obj.Prop2"], items.OrderBy(x=>x?.Even).ThenByDescending(x=>x?.Obj?.Prop2).ToList()),
+            ([">Even","Obj.Prop2"], items.OrderByDescending(x=>x?.Even).ThenBy(x=>x?.Obj?.Prop2).ToList()),
+            ([">Even",">Obj.Prop2"], items.OrderByDescending(x=>x?.Even).ThenByDescending(x=>x?.Obj?.Prop2).ToList()),
+            (["Even","Obj.Type",">Prop1"], items.OrderBy(x=>x?.Even).ThenBy(x=>x?.Obj?.Type).ThenByDescending(x=>x?.Prop1).ToList()),
         };
 
         var cache = new NeverExpiredCache();
