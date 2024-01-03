@@ -40,10 +40,10 @@ public static class QueryableOrderExtensions
         => ThenByDescending(source, props.AsEnumerable());
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), false, SorterBuilder.Build);
+        => Then(source, props.GetEnumerator(), true, SorterBuilder.Build);
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), false, CacheProvider(cache, options));
+        => Then(source, props.GetEnumerator(), true, CacheProvider(cache, options));
 
 
     private static IOrderedQueryable<T>? Order<T>(IQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
