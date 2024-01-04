@@ -25,17 +25,17 @@ public static class EnumerableOrderExtensions
     public static IOrderedEnumerable<T> ThenBy<T>(this IOrderedEnumerable<T> source, params string[] props)
         => ThenBy(source, props.AsEnumerable());
     public static IOrderedEnumerable<T> ThenBy<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), false, Builder);
+        => Then(source, props, false, Builder);
     public static IOrderedEnumerable<T> ThenBy<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), false, CacheProvider(cache, options));
+        => Then(source, props, false, CacheProvider(cache, options));
 
 
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, params string[] props)
         => ThenByDescending(source, props.AsEnumerable());
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), true, Builder);
+        => Then(source, props, true, Builder);
     public static IOrderedEnumerable<T> ThenByDescending<T>(this IOrderedEnumerable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), true, CacheProvider(cache, options));
+        => Then(source, props, true, CacheProvider(cache, options));
 
 
     private static IOrderedEnumerable<T>? Order<T>(IEnumerable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
@@ -45,16 +45,15 @@ public static class EnumerableOrderExtensions
         if (!enumerator.MoveNext())
             return null;
 
-        var type = typeof(T);
+        var type = source.GetType().GetElementTypeExt()!;
         var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
         var method = (desc ? _orderByDesc : _orderBy).MakeGenericMethod(type, sorter.Method.ReturnType);
 
-        return Then((IOrderedEnumerable<T>)method.Invoke(null, [source, sorter])!, enumerator, defaultDesc, sorterFactory);
+        return Then((IOrderedEnumerable<T>)method.Invoke(null, [source, sorter])!, type, enumerator, defaultDesc, sorterFactory);
     }
 
-    private static IOrderedEnumerable<T> Then<T>(IOrderedEnumerable<T> source, IEnumerator<string> enumerator, bool defaultDesc, SorterFactory sorterFactory)
+    private static IOrderedEnumerable<T> Then<T>(IOrderedEnumerable<T> source, Type type, IEnumerator<string> enumerator, bool defaultDesc, SorterFactory sorterFactory)
     {
-        var type = typeof(T);
         while (enumerator.MoveNext())
         {
             var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
@@ -64,6 +63,9 @@ public static class EnumerableOrderExtensions
         }
         return source;
     }
+
+    private static IOrderedEnumerable<T> Then<T>(IOrderedEnumerable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
+        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, sorterFactory);
 
     private static (Delegate Fn, bool Desc) Builder(Type type, string path, bool desc)
     {

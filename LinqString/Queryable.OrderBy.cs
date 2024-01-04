@@ -30,20 +30,20 @@ public static class QueryableOrderExtensions
         => ThenBy(source, props.AsEnumerable());
 
     public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), false, SorterBuilder.Build);
+        => Then(source, props, false, SorterBuilder.Build);
 
     public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), false, CacheProvider(cache, options));
+        => Then(source, props, false, CacheProvider(cache, options));
 
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, params string[] props)
         => ThenByDescending(source, props.AsEnumerable());
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props)
-        => Then(source, props.GetEnumerator(), true, SorterBuilder.Build);
+        => Then(source, props, true, SorterBuilder.Build);
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props.GetEnumerator(), true, CacheProvider(cache, options));
+        => Then(source, props, true, CacheProvider(cache, options));
 
 
     private static IOrderedQueryable<T>? Order<T>(IQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
@@ -53,19 +53,18 @@ public static class QueryableOrderExtensions
         if (!enumerator.MoveNext())
             return null;
 
-        var type = typeof(T);
+        var type = source.GetType().GetElementTypeExt()!;
         var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
 
         return Then((IOrderedQueryable<T>)source.Provider.CreateQuery<T>(Expression.Call(
             _queryableType,
             desc ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
-            [typeof(T), sorter.Body.Type],
-            source.Expression, sorter)), enumerator, defaultDesc, sorterFactory);
+            [type, sorter.Body.Type],
+            source.Expression, sorter)), type, enumerator, defaultDesc, sorterFactory);
     }
 
-    private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, IEnumerator<string> enumerator, bool defaultDesc, SorterFactory sorterFactory)
+    private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, Type type, IEnumerator<string> enumerator, bool defaultDesc, SorterFactory sorterFactory)
     {
-        var type = typeof(T);
         while (enumerator.MoveNext())
         {
             var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
@@ -78,6 +77,10 @@ public static class QueryableOrderExtensions
         }
         return source;
     }
+
+    private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
+        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, sorterFactory);
+
 
     private static SorterFactory CacheProvider(IMemoryCache cache, Action<ICacheEntry>? options)
     {

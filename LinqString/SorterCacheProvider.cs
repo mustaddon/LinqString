@@ -26,7 +26,7 @@ public static class SorterCacheProvider
         Type sourceType, string path,
         Action<ICacheEntry>? options)
     {
-        return cache.GetOrCreate(new { Type = sourceType, Path = path }, entry =>
+        return cache.GetOrCreate(new { Type = sourceType, SortProp = path }, entry =>
         {
             options?.Invoke(entry);
             return new CacheValue(() => SorterBuilder.BuildLambda(sourceType, path));
