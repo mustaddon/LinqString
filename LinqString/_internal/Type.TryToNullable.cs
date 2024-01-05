@@ -2,12 +2,16 @@
 
 internal static partial class TypeExt
 {
-    internal static Type ToNullableType(this Type type)
+    internal static bool TryToNullable(this Type type, out Type nullableType)
     {
         if (type.IsValueType && (!type.IsGenericType || type.GetGenericTypeDefinition() != _nullable1))
-            return _nullable1.MakeGenericType(type);
+        {
+            nullableType = _nullable1.MakeGenericType(type);
+            return true;
+        }
 
-        return type;
+        nullableType = default!;
+        return false;
     }
 
     static readonly Type _nullable1 = typeof(Nullable<>);

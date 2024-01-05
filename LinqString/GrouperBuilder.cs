@@ -26,25 +26,8 @@ public static class GrouperBuilder
 
     static (string Name, Expression Expr) PropExpr(Expression expression, string path)
     {
-        var props = path.Split('.');
-        var nullsafe = expression.NotNull();
-        var result = Expression.PropertyOrField(expression, props[0]) as Expression;
-
-        if (props.Length > 1)
-            for (var i = 1; i < props.Length; i++)
-            {
-                nullsafe = Expression.AndAlso(nullsafe, result.NotNull());
-                result = Expression.PropertyOrField(result, props[i]);
-            }
-
-        var returnType = result.Type.ToNullableType();
-
-        if (result.Type != returnType)
-            result = Expression.Convert(result, returnType);
-
-        result = Expression.Condition(nullsafe, result, Expression.Constant(null, returnType));
-
-        return (string.Join(string.Empty, props), result);
+        var props = path.SplitProps();
+        return (string.Join(string.Empty, props), expression.PropertyOrFieldSafe(props));
     }
 
 }

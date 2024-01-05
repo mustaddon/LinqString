@@ -150,7 +150,7 @@ public static class SelectorBuilder
 
         foreach (var path in orderedPaths)
         {
-            var props = path.Split('.');
+            var props = path.SplitProps();
 
             var lvl = result;
             PropNode? parent = null;

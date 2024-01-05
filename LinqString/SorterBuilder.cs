@@ -13,26 +13,8 @@ public static class SorterBuilder
 
     internal static LambdaExpression BuildLambda(Type sourceType, string finalPath)
     {
-        var props = finalPath.Split('.');
         var param = Expression.Parameter(sourceType, null);
-        var nullsafe = param.NotNull();
-        var memberExpr = Expression.PropertyOrField(param, props[0]) as Expression;
-
-        if (props.Length > 1)
-            for (var i = 1; i < props.Length; i++)
-            {
-                nullsafe = Expression.AndAlso(nullsafe, memberExpr.NotNull());
-                memberExpr = Expression.PropertyOrField(memberExpr, props[i]);
-            }
-
-        var returnType = memberExpr.Type.ToNullableType();
-
-        if (memberExpr.Type != returnType)
-            memberExpr = Expression.Convert(memberExpr, returnType);
-
-        return Expression.Lambda(
-            Expression.Condition(nullsafe, memberExpr, Expression.Constant(null, returnType)),
-            param);
+        return Expression.Lambda(param.PropertyOrFieldSafe(finalPath.SplitProps()), param);
     }
 
     internal static (string path, bool desc) TrimDirection(string path, bool desc)
