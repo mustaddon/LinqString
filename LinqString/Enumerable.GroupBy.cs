@@ -7,16 +7,18 @@ namespace LinqString;
 public static class EnumerableGroupExtensions
 {
     public static IEnumerable<IGrouping<object, T>> GroupBy<T>(this IEnumerable<T> source, params string[] props)
-        => GroupBy<T>(source, GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props).Compile());
+        => GroupBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IEnumerable<IGrouping<object, T>> GroupBy<T>(this IEnumerable<T> source, IEnumerable<string> props)
-        => GroupBy<T>(source, GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props).Compile());
+        => GroupBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IEnumerable<IGrouping<object, T>> GroupBy<T>(this IEnumerable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => GroupBy<T>(source, cache.GetGrouperDelegate(source.GetType().GetElementTypeExt()!, props, options));
+    public static IEnumerable<IGrouping<object, T>> GroupBy<T>(this IEnumerable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => GroupBy(source, cache != null 
+            ? cache.GetGrouperDelegate(source.GetType().GetElementTypeExt()!, props, options) 
+            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props).Compile());
 
 
-    private static IEnumerable<IGrouping<object, T>> GroupBy<T>(object source, Delegate fn)
+    private static IEnumerable<IGrouping<object, T>> GroupBy<T>(IEnumerable<T> source, Delegate fn)
         => (IEnumerable<IGrouping<object, T>>)_groupBy.MakeGenericMethod(
             fn.Method.GetParameters()[1].ParameterType,
             fn.Method.ReturnType)

@@ -8,13 +8,15 @@ public static class QueryableSelectExtensions
 {
 
     public static IQueryable<object?> Select<T>(this IQueryable<T> source, params string[] props)
-       => Select(source, SelectorBuilder.Build(source.GetType().GetElementTypeExt()!, props, _nullsafeObjects, source.Provider is EnumerableQuery<T>));
+       => Select(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IQueryable<object?> Select<T>(this IQueryable<T> source, IEnumerable<string> props)
-       => Select(source, SelectorBuilder.Build(source.GetType().GetElementTypeExt()!, props, _nullsafeObjects, source.Provider is EnumerableQuery<T>));
+       => Select(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IQueryable<object?> Select<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Select(source, cache.GetSelector(source.GetType().GetElementTypeExt()!, props, _nullsafeObjects, source.Provider is EnumerableQuery<T>, options));
+    public static IQueryable<object?> Select<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => Select(source, cache != null
+            ? cache.GetSelector(source.GetType().GetElementTypeExt()!, props, true, source.Provider is EnumerableQuery<T>, options)
+            : SelectorBuilder.Build(source.GetType().GetElementTypeExt()!, props, true, source.Provider is EnumerableQuery<T>));
 
 
     private static IQueryable<object?> Select(IQueryable source, LambdaExpression lambda)
@@ -24,7 +26,4 @@ public static class QueryableSelectExtensions
             [lambda.Parameters[0].Type, lambda.Body.Type],
             source.Expression, lambda)
         .Method.Invoke(null, [source, lambda])!;
-
-
-    const bool _nullsafeObjects = true;
 }

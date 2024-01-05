@@ -6,7 +6,7 @@ namespace LinqString;
 
 public class NeverExpiredCache : IMemoryCache
 {
-    public static NeverExpiredCache Instance { get; } = new();
+    public static readonly NeverExpiredCache Instance = new();
 
 
     private readonly ConcurrentDictionary<object, ICacheEntry> _items = new();

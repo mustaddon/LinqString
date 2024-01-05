@@ -7,9 +7,9 @@
 	<LangVersion>latest</LangVersion>
 	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>..\LinqString.snk</AssemblyOriginatorKeyFile>
-	<AssemblyVersion>1.0.5</AssemblyVersion>
-	<FileVersion>1.0.5</FileVersion>
-	<Version>1.0.5</Version>
+	<AssemblyVersion>1.0.6</AssemblyVersion>
+	<FileVersion>1.0.6</FileVersion>
+	<Version>1.0.6</Version>
 	<Company></Company>
 	<Authors>Leonid Salavatov</Authors>
 	<Copyright>Leonid Salavatov 2023</Copyright>

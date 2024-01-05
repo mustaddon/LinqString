@@ -7,43 +7,43 @@ namespace LinqString;
 public static class QueryableOrderExtensions
 {
     public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, params string[] props)
-        => OrderBy(source, props.AsEnumerable());
+        => OrderBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, IEnumerable<string> props)
-        => Order(source, props, false, SorterBuilder.Build) ?? source.Order();
+        => OrderBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Order(source, props, false, CacheProvider(cache, options)) ?? source.Order();
+    public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => Order(source, props, false, cache != null ? CacheProvider(cache, options) : SorterBuilder.Build) ?? source.Order();
 
 
     public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, params string[] props)
-        => OrderByDescending(source, props.AsEnumerable());
+        => OrderByDescending(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, IEnumerable<string> props)
-        => Order(source, props, true, SorterBuilder.Build) ?? source.OrderDescending();
+        => OrderByDescending(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Order(source, props, true, CacheProvider(cache, options)) ?? source.OrderDescending();
+    public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => Order(source, props, true, cache != null ? CacheProvider(cache, options) : SorterBuilder.Build) ?? source.OrderDescending();
 
 
     public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, params string[] props)
-        => ThenBy(source, props.AsEnumerable());
+        => ThenBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, IEnumerable<string> props)
-        => Then(source, props, false, SorterBuilder.Build);
+        => ThenBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props, false, CacheProvider(cache, options));
+    public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => Then(source, props, false, cache != null ? CacheProvider(cache, options) : SorterBuilder.Build);
 
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, params string[] props)
-        => ThenByDescending(source, props.AsEnumerable());
+        => ThenByDescending(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props)
-        => Then(source, props, true, SorterBuilder.Build);
+        => ThenByDescending(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => Then(source, props, true, CacheProvider(cache, options));
+    public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => Then(source, props, true, cache != null ? CacheProvider(cache, options) : SorterBuilder.Build);
 
 
     private static IOrderedQueryable<T>? Order<T>(IQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)

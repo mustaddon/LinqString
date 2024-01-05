@@ -7,13 +7,15 @@ namespace LinqString;
 public static class QueryableGroupExtensions
 {
     public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, params string[] props)
-        => GroupBy(source, props.AsEnumerable());
+        => GroupBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
     public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, IEnumerable<string> props)
-        => GroupBy(source, GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props));
+        => GroupBy(source, props, DefaultCacheSettings.Instance, DefaultCacheSettings.Entry);
 
-    public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache cache, Action<ICacheEntry>? options = null)
-        => GroupBy(source, cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, options));
+    public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
+        => GroupBy(source, cache != null
+            ? cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, options)
+            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props));
 
 
     private static IQueryable<IGrouping<object, T>> GroupBy<T>(IQueryable<T> source, LambdaExpression lambda)
