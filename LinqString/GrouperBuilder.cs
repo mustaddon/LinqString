@@ -6,15 +6,15 @@ namespace LinqString;
 
 public static class GrouperBuilder
 {
-    public static LambdaExpression Build(Type sourceType, IEnumerable<string> props)
+    public static LambdaExpression Build(Type sourceType, IEnumerable<string> props, bool nullsafeEnumerables = false)
     {
-        return BuildOrdered(sourceType, props.Order());
+        return BuildOrdered(sourceType, props.Order(), nullsafeEnumerables);
     }
 
-    internal static LambdaExpression BuildOrdered(Type sourceType, IEnumerable<string> orderedProps)
+    internal static LambdaExpression BuildOrdered(Type sourceType, IEnumerable<string> orderedProps, bool nullsafeEnumerables)
     {
         var param = Expression.Parameter(sourceType, null);
-        var propExpr = orderedProps.Select(x => PropExpr(param, x)).Buffer();
+        var propExpr = orderedProps.Select(x => PropExpr(param, x, nullsafeEnumerables)).Buffer();
         var keyType = DynamicFactory.CreateType(propExpr.Select(x => (x.Name, x.Expr.Type)));
 
         var initExpr = Expression.MemberInit(
@@ -24,10 +24,10 @@ public static class GrouperBuilder
         return Expression.Lambda(initExpr, param);
     }
 
-    static (string Name, Expression Expr) PropExpr(Expression expression, string path)
+    static (string Name, Expression Expr) PropExpr(Expression expression, string path, bool nullsafeEnumerables)
     {
         var props = path.SplitProps();
-        return (string.Join(string.Empty, props), expression.PropertyOrFieldSafe(props));
+        return (string.Join(string.Empty, props), expression.PropOrCount(props, nullsafeEnumerables));
     }
 
 }

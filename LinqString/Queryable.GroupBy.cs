@@ -14,8 +14,8 @@ public static class QueryableGroupExtensions
 
     public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
         => GroupBy(source, cache != null
-            ? cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, options)
-            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props));
+            ? cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery<T>, options)
+            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery<T>));
 
 
     private static IQueryable<IGrouping<object, T>> GroupBy<T>(IQueryable<T> source, LambdaExpression lambda)

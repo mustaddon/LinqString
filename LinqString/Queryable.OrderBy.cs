@@ -54,20 +54,21 @@ public static class QueryableOrderExtensions
             return null;
 
         var type = source.GetType().GetElementTypeExt()!;
-        var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
+        var nullsafeEnumerables = source.Provider is EnumerableQuery<T>;
+        var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc, nullsafeEnumerables);
 
         return Then((IOrderedQueryable<T>)source.Provider.CreateQuery<T>(Expression.Call(
             _queryableType,
             desc ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
             [type, sorter.Body.Type],
-            source.Expression, sorter)), type, enumerator, defaultDesc, sorterFactory);
+            source.Expression, sorter)), type, enumerator, defaultDesc, nullsafeEnumerables, sorterFactory);
     }
 
-    private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, Type type, IEnumerator<string> enumerator, bool defaultDesc, SorterFactory sorterFactory)
+    private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, Type type, IEnumerator<string> enumerator, bool defaultDesc, bool nullsafeEnumerables, SorterFactory sorterFactory)
     {
         while (enumerator.MoveNext())
         {
-            var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc);
+            var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc, nullsafeEnumerables);
 
             source = (IOrderedQueryable<T>)source.Provider.CreateQuery<T>(Expression.Call(
                 _queryableType,
@@ -79,15 +80,15 @@ public static class QueryableOrderExtensions
     }
 
     private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
-        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, sorterFactory);
+        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, source.Provider is EnumerableQuery<T>, sorterFactory);
 
 
     private static SorterFactory CacheProvider(IMemoryCache cache, Action<ICacheEntry>? options)
     {
-        return (type, path, desc) => cache.GetSorter(type, path, desc, options);
+        return (type, path, desc, nullsafeEnumerables) => cache.GetSorter(type, path, desc, nullsafeEnumerables, options);
     }
 
-    delegate (LambdaExpression lambda, bool finalDesc) SorterFactory(Type type, string path, bool desc);
+    delegate (LambdaExpression lambda, bool finalDesc) SorterFactory(Type type, string path, bool desc, bool nullsafeEnumerables);
 
     static readonly Type _queryableType = typeof(Queryable);
 }

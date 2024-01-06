@@ -16,11 +16,16 @@ public class TestGroupBy
                 Type = x % 5 == 0,
                 Prop2 = "text" + x
             },
+            Objs = x == 2 ? null : Enumerable.Range(0, 2 + (x % 2)).Select(xx => new
+            {
+                Prop3 = $"text-{x}-{xx}"
+            }),
         }).ToList();
 
         var vars = new (string[], IEnumerable<object?>)[] {
             (["Even"], items.GroupBy(x => new { x?.Even }).ToList()),
             (["Even","Obj.Type"], items.GroupBy(x => new { x?.Even, x?.Obj?.Type }).ToList()),
+            (["Objs"], items.GroupBy(x => new { Objs = x?.Objs?.Count() }).ToList()),
         };
 
         var cache = new NeverExpiredCache();
@@ -44,7 +49,7 @@ public class TestGroupBy
 
 #if NET6_0_OR_GREATER
     [Test]
-    public async Task EfCore()
+    public async Task EfCore1()
     {
         using var ctx = new EfCoreContext();
 
@@ -57,6 +62,25 @@ public class TestGroupBy
 
         var test = await query
             .GroupBy(x => x.Author!.FirstName)
+            .ToListAsync();
+
+        Assert.That(result, Is.EqualTo(test).AsCollection);
+    }
+
+    [Test]
+    public async Task EfCore2()
+    {
+        using var ctx = new EfCoreContext();
+
+        var query = ctx.Authors
+            .Include(x => x.Books);
+
+        var result = await query
+            .GroupBy("Books")
+            .ToListAsync();
+
+        var test = await query
+            .GroupBy(x => x.Books.Count())
             .ToListAsync();
 
         Assert.That(result, Is.EqualTo(test).AsCollection);

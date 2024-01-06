@@ -14,8 +14,8 @@ public static class EnumerableGroupExtensions
 
     public static IEnumerable<IGrouping<object, T>> GroupBy<T>(this IEnumerable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
         => GroupBy(source, cache != null 
-            ? cache.GetGrouperDelegate(source.GetType().GetElementTypeExt()!, props, options) 
-            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props).Compile());
+            ? cache.GetGrouperDelegate(source.GetType().GetElementTypeExt()!, props, true, options) 
+            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props, true).Compile());
 
 
     private static IEnumerable<IGrouping<object, T>> GroupBy<T>(IEnumerable<T> source, Delegate fn)

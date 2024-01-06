@@ -8,7 +8,7 @@ namespace LinqString;
 
 public static class SelectorBuilder
 {
-    public static LambdaExpression Build(Type sourceType, IEnumerable<string> props, bool nullsafeObjects, bool nullsafeEnumerables)
+    public static LambdaExpression Build(Type sourceType, IEnumerable<string> props, bool nullsafeObjects = false, bool nullsafeEnumerables = false)
     {
         return BuildOrdered(sourceType, props.Order(), nullsafeObjects, nullsafeEnumerables);
     }

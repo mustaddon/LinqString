@@ -69,13 +69,13 @@ public static class EnumerableOrderExtensions
 
     private static (Delegate Fn, bool Desc) Builder(Type type, string path, bool desc)
     {
-        var (lambda, finalDesc) = SorterBuilder.Build(type, path, desc);
+        var (lambda, finalDesc) = SorterBuilder.Build(type, path, desc, true);
         return (lambda.Compile(), finalDesc);
     }
 
     private static SorterFactory CacheProvider(IMemoryCache cache, Action<ICacheEntry>? options)
     {
-        return (Type type, string path, bool desc) => cache.GetSorterDelegate(type, path, desc, options);
+        return (Type type, string path, bool desc) => cache.GetSorterDelegate(type, path, desc, true, options);
     }
 
 
