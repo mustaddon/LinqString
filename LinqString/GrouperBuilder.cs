@@ -25,9 +25,6 @@ public static class GrouperBuilder
     }
 
     static (string Name, Expression Expr) PropExpr(Expression expression, string path, bool nullsafeEnumerables)
-    {
-        var props = path.SplitProps();
-        return (string.Join(string.Empty, props), expression.PropOrCount(props, nullsafeEnumerables));
-    }
+        => (path.NameFromPath(), expression.PathValue(path, nullsafeEnumerables));
 
 }

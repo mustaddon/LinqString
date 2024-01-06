@@ -14,7 +14,7 @@ public static class SorterBuilder
     internal static LambdaExpression BuildLambda(Type sourceType, string finalPath, bool nullsafeEnumerables)
     {
         var param = Expression.Parameter(sourceType, null);
-        return Expression.Lambda(param.PropOrCount(finalPath.SplitProps(), nullsafeEnumerables), param);
+        return Expression.Lambda(param.PathValue(finalPath, nullsafeEnumerables), param);
     }
 
     internal static (string path, bool desc) TrimDirection(string path, bool desc)

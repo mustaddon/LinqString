@@ -7,9 +7,9 @@
 	<LangVersion>latest</LangVersion>
 	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>..\LinqString.snk</AssemblyOriginatorKeyFile>
-	<AssemblyVersion>1.0.7</AssemblyVersion>
-	<FileVersion>1.0.7</FileVersion>
-	<Version>1.0.7</Version>
+	<AssemblyVersion>1.0.8</AssemblyVersion>
+	<FileVersion>1.0.8</FileVersion>
+	<Version>1.0.8</Version>
 	<Company></Company>
 	<Authors>Leonid Salavatov</Authors>
 	<Copyright>Leonid Salavatov 2023</Copyright>
@@ -17,7 +17,7 @@
 	<Product>LinqString</Product>
 	<Title>LinqString</Title>
 	<Description>IQueryable.Select by property names (EF compatible extensions)</Description>
-	<PackageTags>linq queryable enumerable select orderby groupby extensions dynamic expressions entityframework ef efcore</PackageTags>
+	<PackageTags>linq queryable enumerable select orderby groupby extensions dynamic expressions entityframework efcore</PackageTags>
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	<PackageProjectUrl>https://github.com/mustaddon/LinqString</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/mustaddon/LinqString</RepositoryUrl>

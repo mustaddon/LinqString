@@ -10,16 +10,16 @@ var someQeryableSource = Enumerable.Range(0, 10).Select(x => new
         Prop21 = x,
         Prop22 = $"text-{x}",
     },
-    Prop3 = Enumerable.Range(0, 3).Select(xx => new
+    Prop3 = Enumerable.Range(0, x).Select(xx => new
     {
         Prop31 = xx,
         Prop32 = $"text-{x}-{xx}",
-    })
+        Prop33 = DateTime.Today.AddDays(xx),
+    }),
 }).AsQueryable();
 
-
 var result = someQeryableSource
-    .OrderBy("Even", ">Prop2.Prop21")
+    .OrderBy("Even", ">Prop3.Sum(Prop31)")
     .Select("Prop1", "Prop2.Prop22", "Prop3.Prop32")
     .ToList();
 
@@ -33,7 +33,7 @@ var someServiceProvider = new ServiceCollection().AddMemoryCache().BuildServiceP
 
 var withSlidingCache = someQeryableSource
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"],
-        someServiceProvider.GetRequiredService<IMemoryCache>(), 
+        someServiceProvider.GetRequiredService<IMemoryCache>(),
         o => o.SetSlidingExpiration(TimeSpan.FromMilliseconds(30)))
     .ToList();
 
