@@ -20,7 +20,7 @@ var someQeryableSource = Enumerable.Range(0, 10).Select(x => new
 
 var result = someQeryableSource
     .OrderBy("Even", ">Prop3.Sum(Prop31)")
-    .Select("Prop1", "Prop2.Prop22", "Prop3.Prop32")
+    .Select("Prop1", "Prop2.Prop22", "Prop3.Max(Prop33)")
     .ToList();
 
 Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
@@ -34,9 +34,20 @@ var someServiceProvider = new ServiceCollection().AddMemoryCache().BuildServiceP
 var withSlidingCache = someQeryableSource
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"],
         someServiceProvider.GetRequiredService<IMemoryCache>(),
-        o => o.SetSlidingExpiration(TimeSpan.FromMilliseconds(30)))
+        o => o.SetSlidingExpiration(TimeSpan.FromSeconds(30)))
     .ToList();
 
 var withNeverExpiredCache = someQeryableSource
     .Select(["Prop1", "Prop2.Prop22", "Prop3.Prop32"], NeverExpiredCache.Instance)
+    .ToList();
+
+
+
+// OR configure once for all queries
+
+DefaultCacheSettings.Instance = someServiceProvider.GetRequiredService<IMemoryCache>();
+DefaultCacheSettings.Entry = o => o.SetSlidingExpiration(TimeSpan.FromSeconds(30));
+
+var withDefaultCache = someQeryableSource
+    .Select("Prop1", "Prop2.Prop22", "Prop3.Prop32")
     .ToList();

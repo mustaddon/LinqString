@@ -1,5 +1,5 @@
-﻿using LinqString._internal;
-using DynamicAnonymousType;
+﻿using DynamicAnonymousType;
+using LinqString._internal;
 using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -15,13 +15,14 @@ public static class SelectorBuilder
 
     internal static LambdaExpression BuildOrdered(Type sourceType, IEnumerable<string> orderedProps, bool nullsafeObjects, bool nullsafeEnumerables)
     {
-        var data = FillData(new(sourceType), GetPropNodes(orderedProps));
+        var ctx = new Ctx { 
+            NullsafeObjects = nullsafeObjects, 
+            NullsafeEnumerables = nullsafeEnumerables 
+        };
+
+        var data = FillData(ctx, new(sourceType), GetPropNodes(orderedProps));
         var param = Expression.Parameter(sourceType, null);
-        var body = MemberInitExpr(new Ctx
-        {
-            NullsafeObjects = nullsafeObjects,
-            NullsafeEnumerables = nullsafeEnumerables
-        }, param, data);
+        var body = MemberInitExpr(ctx, param, data);
         return Expression.Lambda(body, param);
     }
 
@@ -52,6 +53,9 @@ public static class SelectorBuilder
     {
         var memberAccess = MemberAccessExpr(source, data);
 
+        if (data.Method != null)
+            return memberAccess.PathValue(data.Method!, ctx.NullsafeEnumerables);
+
         if (!data.IsDynamic)
             return memberAccess;
 
@@ -80,12 +84,12 @@ public static class SelectorBuilder
     static readonly MethodInfo _enumerableSelect = new Func<IEnumerable<object>, Func<object, object>, IEnumerable<object>>(Enumerable.Select)
         .Method.GetGenericMethodDefinition();
 
-    static PropData FillData(PropData data, IEnumerable<PropNode> orderedNodes, bool isFilled = false)
+    static PropData FillData(Ctx ctx, PropData data, IEnumerable<PropNode> orderedNodes, bool isFilled = false)
     {
         data.SourceElementType = data.SourceType == typeof(string) ? null : data.SourceType.GetElementTypeExt();
         data.IsEnumerable = data.SourceElementType != null;
 
-        var childs = data.Childs = new();
+        var childs = data.Childs = [];
         var childNames = new HashSet<string>();
         var sourceType = data.SourceElementType ?? data.SourceType;
 
@@ -103,10 +107,20 @@ public static class SelectorBuilder
                 continue;
 
             if (node.IsCustom)
-                FillData(tmp, node.Childs!, node.IsFilled);
+                FillData(ctx, tmp, node.Childs!, node.IsFilled);
 
-            childs.Add(tmp);
-            childNames.Add(tmp.Name);
+            if (node.IsFilled || node.Childs?.Count > 0)
+            {
+                childs.Add(tmp);
+                childNames.Add(tmp.Name);
+            }
+
+            if (node.Methods?.Count > 0)
+                foreach(var method in GetMethods(ctx, tmp, node.Methods)) 
+                { 
+                    childs.Add(method);
+                    childNames.Add(method.Name!);
+                }
         }
 
         if (isFilled)
@@ -144,50 +158,71 @@ public static class SelectorBuilder
         return data;
     }
 
+    static IEnumerable<PropData> GetMethods(Ctx ctx, PropData source, IEnumerable<string> methods)
+    {
+        var param = Expression.Parameter(source.SourceType, null);
+
+        foreach (var method in methods)
+            yield return new(source.SourceType)
+            {
+                Member = source.Member,
+                Method = method,
+                Name = string.Concat(source.Name, method.NameFromPath()),
+                TargetType = param.PathValue(method, ctx.NullsafeEnumerables).Type,
+            };
+    }
+
     static List<PropNode> GetPropNodes(IEnumerable<string> orderedPaths)
     {
         var result = new List<PropNode>();
 
         foreach (var path in orderedPaths)
         {
-            var props = path.SplitProps();
-
+            var enumerator = path.SplitPathLight().GetEnumerator();
+            var hasNext = enumerator.MoveNext();
             var lvl = result;
             PropNode? parent = null;
 
-            for (var i = 0; i < props.Length; i++)
+            while (hasNext)
             {
-                var name = props[i];
+                var (name, isFn) = enumerator.Current;
+                hasNext = enumerator.MoveNext();
+
+                if (isFn)
+                {
+                    SetIsCustom(parent!.Parent);
+                    (parent.Methods ??= []).Add(name);
+                    continue;
+                }
+
                 var last = lvl.LastOrDefault();
-                var hasNext = i + 1 < props.Length;
 
                 if (name != last?.Name)
-                {
                     lvl.Add(last = new PropNode { Name = name, Parent = parent });
 
-                    if (!hasNext)
-                        last.IsFilled = true;
-                    else
-                    {
-                        last.IsCustom = true;
-                        var cur = last.Parent;
-                        while (cur?.IsCustom == false)
-                        {
-                            cur.IsCustom = true;
-                            cur = cur.Parent;
-                        }
-                    }
-                }
+                if (!hasNext)
+                    last.IsFilled = true;
+                else if (!enumerator.Current.IsFn)
+                    SetIsCustom(last);
 
                 if (hasNext)
                 {
                     parent = last;
-                    lvl = (last.Childs ??= new());
+                    lvl = (last.Childs ??= []);
                 }
             }
         }
 
         return result;
+    }
+
+    static void SetIsCustom(PropNode? node)
+    {
+        while (node?.IsCustom == false)
+        {
+            node.IsCustom = true;
+            node = node.Parent;
+        }
     }
 
     class PropNode
@@ -198,6 +233,7 @@ public static class SelectorBuilder
 
         public PropNode? Parent { get; set; }
         public List<PropNode>? Childs { get; set; }
+        public List<string>? Methods { get; set; }
     }
 
     class PropData
@@ -211,6 +247,7 @@ public static class SelectorBuilder
         public bool IsEnumerable { get; set; }
 
         public string? Name { get; set; }
+        public string? Method { get; set; }
         public MemberInfo? Member { get; set; }
         public Type SourceType { get; }
         public Type? SourceElementType { get; set; }

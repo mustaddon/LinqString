@@ -25,5 +25,29 @@ internal static partial class StringExt
         if (last < path.Length)
             yield return (path.Substring(last, path.Length - last), null);
     }
+
+    public static IEnumerable<(string Name, bool IsFn)> SplitPathLight(this string path)
+    {
+        var last = 0;
+
+        for (int i = 0; i < path.Length; i++)
+        {
+            switch (path[i])
+            {
+                case '.':
+                    yield return (path.Substring(last, i - last), false);
+                    last = i + 1;
+                    break;
+
+                case '(':
+                    yield return (path.Substring(last, path.Length - last), true);
+                    last = i = path.Length;
+                    break;
+            }
+        }
+
+        if (last < path.Length)
+            yield return (path.Substring(last, path.Length - last), false);
+    }
 }
 

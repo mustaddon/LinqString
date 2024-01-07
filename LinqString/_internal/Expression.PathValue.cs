@@ -8,39 +8,35 @@ internal static partial class ExpressionExt
         if (path == string.Empty)
             return expression;
 
-        var nullsafe = expression.NotNull();
-        var enumerator = path.SplitPath().GetEnumerator();
+        Expression? nullsafe = null;
 
-        enumerator.MoveNext();
-
-        expression = Expression.PropertyOrField(expression, enumerator.Current.Name);
-
-        while (enumerator.MoveNext())
+        foreach (var (name, args) in path.SplitPath())
         {
-            if (enumerator.Current.Args == null)
+            if (args == null)
             {
-                nullsafe = Expression.AndAlso(nullsafe, expression.NotNull());
-                expression = Expression.PropertyOrField(expression, enumerator.Current.Name);
+                nullsafe = nullsafe.And(expression.NotNull());
+                expression = Expression.PropertyOrField(expression, name);
             }
             else
             {
                 if (nullsafeEnumerables)
                 {
-                    nullsafe = Expression.AndAlso(nullsafe, expression.NotNull());
+                    nullsafe = nullsafe.And(expression.NotNull());
 
-                    if (_needAny.Contains(enumerator.Current.Name))
-                        nullsafe = Expression.AndAlso(nullsafe, Expression.IsTrue(Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression])));
+                    if (_needAny.Contains(name))
+                        nullsafe = nullsafe.And(Expression.IsTrue(Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression])));
                 }
 
-                expression = enumerator.Current.Name switch
+                expression = name switch
                 {
                     nameof(Enumerable.Count) => Count(expression),
                     nameof(Enumerable.Any) => Any(expression),
-                    nameof(Enumerable.Sum) => Sum(expression, ArgsConvertLambda(expression, enumerator.Current.Args, nullsafeEnumerables)),
-                    nameof(Enumerable.Min) => Min(expression, ArgsLambda(expression, enumerator.Current.Args, nullsafeEnumerables)),
-                    nameof(Enumerable.Max) => Max(expression, ArgsLambda(expression, enumerator.Current.Args, nullsafeEnumerables)),
-                    nameof(Enumerable.Average) => Avg(expression, ArgsConvertLambda(expression, enumerator.Current.Args, nullsafeEnumerables)),
-                    _ => throw new KeyNotFoundException(enumerator.Current.Name),
+                    nameof(Enumerable.Sum) => Sum(expression, ArgsConvertLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Enumerable.Min) => Min(expression, ArgsLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Enumerable.Max) => Max(expression, ArgsLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Enumerable.Average) => Avg(expression, ArgsConvertLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Avg) => Avg(expression, ArgsConvertLambda(expression, args, nullsafeEnumerables)),
+                    _ => throw new KeyNotFoundException(name),
                 };
             }
         }
@@ -51,10 +47,13 @@ internal static partial class ExpressionExt
         if (elementType != null)
         {
             if (nullsafeEnumerables)
-                nullsafe = Expression.AndAlso(nullsafe, expression.NotNull());
+                nullsafe = nullsafe.And(expression.NotNull());
 
             expression = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), [elementType], [expression]);
         }
+
+        if (nullsafe == null)
+            return expression;
 
         if (expression.Type.TryToNullable(out var nullableType))
             expression = Expression.Convert(expression, nullableType);
@@ -112,5 +111,10 @@ internal static partial class ExpressionExt
         { typeof(uint?), typeof(long?) },
     };
 
-    static readonly HashSet<string> _needAny = [nameof(Enumerable.Min), nameof(Enumerable.Max), nameof(Enumerable.Average)];
+    static readonly HashSet<string> _needAny = [
+        nameof(Enumerable.Min), 
+        nameof(Enumerable.Max), 
+        nameof(Enumerable.Average), 
+        nameof(Avg)
+    ];
 }
