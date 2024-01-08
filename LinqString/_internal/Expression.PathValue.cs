@@ -36,6 +36,8 @@ internal static partial class ExpressionExt
                     nameof(Enumerable.Max) => Max(expression, ArgsLambda(expression, args, nullsafeEnumerables)),
                     nameof(Enumerable.Average) => Avg(expression, ArgsConvertLambda(expression, args, nullsafeEnumerables)),
                     nameof(Avg) => Avg(expression, ArgsConvertLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Enumerable.First) => First(expression, ArgsLambda(expression, args, nullsafeEnumerables)),
+                    nameof(Enumerable.Last) => Last(expression, ArgsLambda(expression, args, nullsafeEnumerables)),
                     _ => throw new KeyNotFoundException(name),
                 };
             }
@@ -79,6 +81,14 @@ internal static partial class ExpressionExt
     static MethodCallExpression Avg(Expression expression, LambdaExpression lambda)
         => Expression.Call(typeof(Enumerable), nameof(Enumerable.Average), [lambda.Parameters[0].Type], [expression, lambda]);
 
+    static MethodCallExpression First(Expression expression, LambdaExpression lambda)
+        => Expression.Call(typeof(Enumerable), nameof(Enumerable.FirstOrDefault), [lambda.ReturnType],
+            [Expression.Call(typeof(Enumerable), nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
+
+    static MethodCallExpression Last(Expression expression, LambdaExpression lambda)
+        => Expression.Call(typeof(Enumerable), nameof(Enumerable.LastOrDefault), [lambda.ReturnType],
+            [Expression.Call(typeof(Enumerable), nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
+
     static LambdaExpression ArgsLambda(Expression expression, string args, bool nullsafeEnumerables)
     {
         var param = Expression.Parameter(expression.Type.GetElementTypeExt()!, null);
@@ -112,9 +122,9 @@ internal static partial class ExpressionExt
     };
 
     static readonly HashSet<string> _needAny = [
-        nameof(Enumerable.Min), 
-        nameof(Enumerable.Max), 
-        nameof(Enumerable.Average), 
+        nameof(Enumerable.Min),
+        nameof(Enumerable.Max),
+        nameof(Enumerable.Average),
         nameof(Avg)
     ];
 }
