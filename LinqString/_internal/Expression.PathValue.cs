@@ -24,7 +24,7 @@ internal static partial class ExpressionExt
                     nullsafe = nullsafe.And(expression.NotNull());
 
                     if (_needAny.Contains(name))
-                        nullsafe = nullsafe.And(Expression.IsTrue(Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression])));
+                        nullsafe = nullsafe.And(Expression.IsTrue(Expression.Call(Types.Enumerable, nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression])));
                 }
 
                 expression = name switch
@@ -43,15 +43,12 @@ internal static partial class ExpressionExt
             }
         }
 
-        var elementType = expression.Type.IsValueType || expression.Type == typeof(string) ? null
-            : expression.Type.GetElementTypeExt();
-
-        if (elementType != null)
+        if (expression.Type.TryGetElementType(out var elementType))
         {
             if (nullsafeEnumerables)
                 nullsafe = nullsafe.And(expression.NotNull());
 
-            expression = Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), [elementType], [expression]);
+            expression = Expression.Call(Types.Enumerable, nameof(Enumerable.Count), [elementType], [expression]);
         }
 
         if (nullsafe == null)
@@ -64,30 +61,30 @@ internal static partial class ExpressionExt
     }
 
     static MethodCallExpression Any(Expression expression)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Any), [expression.Type.GetElementTypeExt()!], [expression]);
 
     static MethodCallExpression Count(Expression expression)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Count), [expression.Type.GetElementTypeExt()!], [expression]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Count), [expression.Type.GetElementTypeExt()!], [expression]);
 
     static MethodCallExpression Min(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Min), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Min), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda]);
 
     static MethodCallExpression Max(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Max), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Max), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda]);
 
     static MethodCallExpression Sum(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Sum), [lambda.Parameters[0].Type], [expression, lambda]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Sum), [lambda.Parameters[0].Type], [expression, lambda]);
 
     static MethodCallExpression Avg(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.Average), [lambda.Parameters[0].Type], [expression, lambda]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.Average), [lambda.Parameters[0].Type], [expression, lambda]);
 
     static MethodCallExpression First(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.FirstOrDefault), [lambda.ReturnType],
-            [Expression.Call(typeof(Enumerable), nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.FirstOrDefault), [lambda.ReturnType],
+            [Expression.Call(Types.Enumerable, nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
 
     static MethodCallExpression Last(Expression expression, LambdaExpression lambda)
-        => Expression.Call(typeof(Enumerable), nameof(Enumerable.LastOrDefault), [lambda.ReturnType],
-            [Expression.Call(typeof(Enumerable), nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
+        => Expression.Call(Types.Enumerable, nameof(Enumerable.LastOrDefault), [lambda.ReturnType],
+            [Expression.Call(Types.Enumerable, nameof(Enumerable.Select), [lambda.Parameters[0].Type, lambda.ReturnType], [expression, lambda])]);
 
     static LambdaExpression ArgsLambda(Expression expression, string args, bool nullsafeEnumerables)
     {

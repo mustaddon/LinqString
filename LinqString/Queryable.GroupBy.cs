@@ -14,13 +14,13 @@ public static class QueryableGroupExtensions
 
     public static IQueryable<IGrouping<object, T>> GroupBy<T>(this IQueryable<T> source, IEnumerable<string> props, IMemoryCache? cache, Action<ICacheEntry>? options = null)
         => GroupBy(source, cache != null
-            ? cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery<T>, options)
-            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery<T>));
+            ? cache.GetGrouper(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery, options)
+            : GrouperBuilder.Build(source.GetType().GetElementTypeExt()!, props, source.Provider is EnumerableQuery));
 
 
     private static IQueryable<IGrouping<object, T>> GroupBy<T>(IQueryable<T> source, LambdaExpression lambda)
         => (IQueryable<IGrouping<object, T>>)Expression.Call(
-            typeof(Queryable),
+            Types.Queryable,
             nameof(Queryable.GroupBy),
             [lambda.Parameters[0].Type, lambda.Body.Type],
             source.Expression, lambda)

@@ -54,11 +54,11 @@ public static class QueryableOrderExtensions
             return null;
 
         var type = source.GetType().GetElementTypeExt()!;
-        var nullsafeEnumerables = source.Provider is EnumerableQuery<T>;
+        var nullsafeEnumerables = source.Provider is EnumerableQuery;
         var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc, nullsafeEnumerables);
 
         return Then((IOrderedQueryable<T>)source.Provider.CreateQuery<T>(Expression.Call(
-            _queryableType,
+            Types.Queryable,
             desc ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
             [type, sorter.Body.Type],
             source.Expression, sorter)), type, enumerator, defaultDesc, nullsafeEnumerables, sorterFactory);
@@ -71,7 +71,7 @@ public static class QueryableOrderExtensions
             var (sorter, desc) = sorterFactory(type, enumerator.Current, defaultDesc, nullsafeEnumerables);
 
             source = (IOrderedQueryable<T>)source.Provider.CreateQuery<T>(Expression.Call(
-                _queryableType,
+                Types.Queryable,
                 desc ? nameof(Queryable.ThenByDescending) : nameof(Queryable.ThenBy),
                 [type, sorter.Body.Type],
                 source.Expression, sorter)); // Expression.Quote(sorter)
@@ -80,7 +80,7 @@ public static class QueryableOrderExtensions
     }
 
     private static IOrderedQueryable<T> Then<T>(IOrderedQueryable<T> source, IEnumerable<string> props, bool defaultDesc, SorterFactory sorterFactory)
-        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, source.Provider is EnumerableQuery<T>, sorterFactory);
+        => Then(source, source.GetType().GetElementTypeExt()!, props.GetEnumerator(), defaultDesc, source.Provider is EnumerableQuery, sorterFactory);
 
 
     private static SorterFactory CacheProvider(IMemoryCache cache, Action<ICacheEntry>? options)
@@ -89,6 +89,4 @@ public static class QueryableOrderExtensions
     }
 
     delegate (LambdaExpression lambda, bool finalDesc) SorterFactory(Type type, string path, bool desc, bool nullsafeEnumerables);
-
-    static readonly Type _queryableType = typeof(Queryable);
 }

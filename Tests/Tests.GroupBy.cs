@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Tests;
 
@@ -24,7 +23,7 @@ public class TestGroupBy
                 Prop3 = $"text-{x}-{xx}",
                 Date1 = xx == 1 ? null : (DateTime?)DateTime.Today.AddDays(_rnd.Next(1, 10)),
                 Date2 = xx == 1 ? null : (DateTimeOffset?)new DateTimeOffset(DateTime.Today.AddDays(_rnd.Next(1, 10))),
-                Num1 = xx == 1 ? null : (byte?)_rnd.Next(1,10),
+                Num1 = xx == 1 ? null : (byte?)_rnd.Next(1, 10),
                 Num2 = xx == 1 ? null : (short?)_rnd.Next(1, 10),
                 Num3 = xx == 1 ? null : (ushort?)_rnd.Next(1, 10),
                 Num4 = xx == 1 ? null : (int?)_rnd.Next(1, 10),
@@ -37,7 +36,8 @@ public class TestGroupBy
                 {
                     Prop4 = _rnd.Next(0, 10),
                 },
-                Objs = Enumerable.Range(0, _rnd.Next(0, 10)).Select(xxx => new {
+                Objs = Enumerable.Range(0, _rnd.Next(0, 10)).Select(xxx => new
+                {
                     Prop5 = _rnd.Next(0, 10),
                     Prop6 = $"text-{x}-{xx}-{xxx}",
                 }).ToList(),
@@ -92,7 +92,7 @@ public class TestGroupBy
         }
 
     }
-    
+
 #if NET6_0_OR_GREATER
     [Test]
     public async Task EfCore1()

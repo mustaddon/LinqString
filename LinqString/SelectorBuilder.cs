@@ -13,26 +13,26 @@ public static class SelectorBuilder
         return BuildOrdered(sourceType, props.Order(), nullsafeObjects, nullsafeEnumerables);
     }
 
-    internal static LambdaExpression BuildOrdered(Type sourceType, IEnumerable<string> orderedProps, bool nullsafeObjects, bool nullsafeEnumerables)
+    internal static LambdaExpression BuildOrdered(Type sourceElementType, IEnumerable<string> orderedProps, bool nullsafeObjects, bool nullsafeEnumerables)
     {
-        var ctx = new Ctx { 
-            NullsafeObjects = nullsafeObjects, 
-            NullsafeEnumerables = nullsafeEnumerables 
+        var ctx = new Ctx
+        {
+            NullsafeObjects = nullsafeObjects,
+            NullsafeEnumerables = nullsafeEnumerables
         };
 
-        var data = FillData(ctx, new(sourceType), GetPropNodes(orderedProps));
-        var param = Expression.Parameter(sourceType, null);
-        var body = MemberInitExpr(ctx, param, data);
-        return Expression.Lambda(body, param);
+        var data = FillData(ctx, new(sourceElementType.ToEnumerable()), GetPropTree(orderedProps));
+        var param = Expression.Parameter(sourceElementType, null);
+        return Expression.Lambda(BindOrInit(ctx, param, data), param);
     }
 
-    static Expression MemberInitExpr(Ctx ctx, Expression source, PropData data)
+    static Expression InitExpr(Ctx ctx, Expression source, PropData data)
     {
         var returnType = data.TargetElementType ?? data.TargetType;
 
         var init = Expression.MemberInit(
             Expression.New(returnType),
-            data.Childs!.Select(x => Expression.Bind(returnType.GetProperty(x.Name!)!, BindingExpr(ctx, source, x))));
+            data.Childs!.Select(x => Expression.Bind(returnType.GetProperty(x.Name!)!, BindExpr(ctx, source, x))));
 
         if (!ctx.NullsafeObjects)
             return init;
@@ -43,104 +43,121 @@ public static class SelectorBuilder
            returnType);
     }
 
-    static MemberExpression MemberAccessExpr(Expression source, PropData data)
+    static Expression BindExpr(Ctx ctx, Expression source, PropData data)
     {
-        return Expression.MakeMemberAccess(source, data.Member!);
-        //return Expression.PropertyOrField(source, data.Name!);
-    }
-
-    static Expression BindingExpr(Ctx ctx, Expression source, PropData data)
-    {
-        var memberAccess = MemberAccessExpr(source, data);
+        if (data.Member != null)
+            source = Expression.MakeMemberAccess(source, data.Member); // Expression.PropertyOrField(source, data.Name!);
 
         if (data.Method != null)
-            return memberAccess.PathValue(data.Method!, ctx.NullsafeEnumerables);
+            return source.PathValue(data.Method!, ctx.NullsafeEnumerables);
 
         if (!data.IsDynamic)
-            return memberAccess;
+            return source;
 
         if (!data.IsEnumerable)
-            return MemberInitExpr(ctx, memberAccess, data);
+            return InitExpr(ctx, source, data);
 
         if (!ctx.NullsafeEnumerables)
-            return SelectExpr(ctx, memberAccess, data);
+            return SelectExpr(ctx, source, data);
 
-        var returnType = data.TargetType;
+        return Expression.Condition(source.NotNull(),
+            SelectExpr(ctx, source, data),
+            Expression.Constant(null, data.TargetType));
+    }
 
-        return Expression.Condition(
-            memberAccess.NotNull(), SelectExpr(ctx, memberAccess, data),
-            Expression.Constant(null, returnType),
-            returnType);
+    static Expression BindOrInit(Ctx ctx, Expression source, PropData data)
+    {
+        return data.IsEnumerableEnumerable
+            ? BindExpr(ctx, source, data.Childs!.First())
+            : InitExpr(ctx, source, data);
     }
 
     static MethodCallExpression SelectExpr(Ctx ctx, Expression source, PropData data)
     {
-        var lambdaParam = Expression.Parameter(data.SourceElementType!, null);
-        var lambda = Expression.Lambda(MemberInitExpr(ctx, lambdaParam, data), lambdaParam);
         var select = _enumerableSelect.MakeGenericMethod(data.SourceElementType!, data.TargetElementType!);
+        var lambdaParam = Expression.Parameter(data.SourceElementType!, null);
+        var lambda = Expression.Lambda(BindOrInit(ctx, lambdaParam, data), lambdaParam);
         return Expression.Call(select, source, lambda);
     }
 
     static readonly MethodInfo _enumerableSelect = new Func<IEnumerable<object>, Func<object, object>, IEnumerable<object>>(Enumerable.Select)
         .Method.GetGenericMethodDefinition();
 
-    static PropData FillData(Ctx ctx, PropData data, IEnumerable<PropNode> orderedNodes, bool isFilled = false)
+    static PropData FillData(Ctx ctx, PropData data, PropNode node, bool isFilled = false)
     {
-        data.SourceElementType = data.SourceType == typeof(string) ? null : data.SourceType.GetElementTypeExt();
-        data.IsEnumerable = data.SourceElementType != null;
+        if (data.SourceType.TryGetElementType(out var sourceType))
+        {
+            data.SourceElementType = sourceType;
+            data.IsEnumerable = true;
+        }
+        else
+        {
+            sourceType = data.SourceType;
+        }
 
         var childs = data.Childs = [];
-        var childNames = new HashSet<string>();
-        var sourceType = data.SourceElementType ?? data.SourceType;
 
-        PropertyInfo? prop;
-        FieldInfo? field;
-        PropData? tmp;
-
-        foreach (var node in orderedNodes)
+        if (data.IsEnumerable && sourceType.IsEnumerable())
         {
-            if ((prop = sourceType.GetProperty(node.Name)) != null)
-                tmp = new(prop.PropertyType) { Name = node.Name, Member = prop };
-            else if ((field = sourceType.GetField(node.Name)) != null)
-                tmp = new(field.FieldType) { Name = node.Name, Member = field };
-            else
-                continue;
+            data.IsEnumerableEnumerable = true;
+            childs.Add(FillData(ctx, new(sourceType), node, isFilled));
+        }
+        else
+        {
+            PropertyInfo? prop;
+            FieldInfo? field;
+            PropData? tmp;
 
-            if (node.IsCustom)
-                FillData(ctx, tmp, node.Childs!, node.IsFilled);
-
-            if (node.IsFilled || node.Childs?.Count > 0)
+            foreach (var childNode in node.Childs!)
             {
-                childs.Add(tmp);
-                childNames.Add(tmp.Name);
+                if ((prop = sourceType.GetProperty(childNode.Name)) != null)
+                    tmp = new(prop.PropertyType) { Name = childNode.Name, Member = prop };
+                else if ((field = sourceType.GetField(childNode.Name)) != null)
+                    tmp = new(field.FieldType) { Name = childNode.Name, Member = field };
+                else
+                    continue;
+
+                if (childNode.IsCustom)
+                    FillData(ctx, tmp, childNode, childNode.IsFilled);
+
+                if (childNode.IsFilled || childNode.Childs?.Count > 0)
+                    childs.Add(tmp);
+
+                if (childNode.Methods != null)
+                    foreach (var method in GetMethods(ctx, tmp, childNode.Methods))
+                        childs.Add(method);
             }
 
-            if (node.Methods?.Count > 0)
-                foreach(var method in GetMethods(ctx, tmp, node.Methods)) 
-                { 
-                    childs.Add(method);
-                    childNames.Add(method.Name!);
+            if (isFilled)
+            {
+                var childNames = new HashSet<string>(childs.Where(x => x.Name != null).Select(x => x.Name!));
+
+                var missed = sourceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(x => x.CanRead)
+                    .Select(x => new PropData(x.PropertyType) { Name = x.Name, Member = x })
+                    .Concat(sourceType.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(x => new PropData(x.FieldType) { Name = x.Name, Member = x }))
+                    .Where(x => !childNames.Contains(x.Name!));
+
+                foreach (var item in missed)
+                {
+                    childs.Add(item);
+                    childNames.Add(item.Name!);
                 }
-        }
-
-        if (isFilled)
-        {
-            var missed = sourceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(x => x.CanRead)
-                .Select(x => new PropData(x.PropertyType) { Name = x.Name, Member = x })
-                .Concat(sourceType.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                .Select(x => new PropData(x.FieldType) { Name = x.Name, Member = x }))
-                .Where(x => !childNames.Contains(x.Name!));
-
-            foreach (var item in missed)
-            {
-                childs.Add(item);
-                childNames.Add(item.Name!);
             }
         }
 
-
-        if (childs.Count > 0)
+        if (data.IsEnumerableEnumerable)
+        {
+            var child = childs.First();
+            if (child.IsDynamic)
+            {
+                data.IsDynamic = true;
+                data.TargetElementType = child.TargetType;
+                data.TargetType = data.TargetElementType.ToEnumerable();
+            }
+        }
+        else if (childs.Count > 0)
         {
             var dynamicType = DynamicFactory.CreateType(childs.Select(x => (x.Name!, x.TargetType!)));
 
@@ -150,7 +167,7 @@ public static class SelectorBuilder
                 data.TargetType = dynamicType;
             else
             {
-                data.TargetType = typeof(IEnumerable<>).MakeGenericType(dynamicType);
+                data.TargetType = dynamicType.ToEnumerable();
                 data.TargetElementType = dynamicType;
             }
         }
@@ -172,16 +189,16 @@ public static class SelectorBuilder
             };
     }
 
-    static List<PropNode> GetPropNodes(IEnumerable<string> orderedPaths)
+    static PropNode GetPropTree(IEnumerable<string> orderedPaths)
     {
-        var result = new List<PropNode>();
+        var result = new PropNode { Childs = [] };
 
         foreach (var path in orderedPaths)
         {
             var enumerator = path.SplitPathLight().GetEnumerator();
             var hasNext = enumerator.MoveNext();
-            var lvl = result;
-            PropNode? parent = null;
+            var parent = result;
+            var lvl = result.Childs;
 
             while (hasNext)
             {
@@ -190,7 +207,7 @@ public static class SelectorBuilder
 
                 if (isFn)
                 {
-                    SetIsCustom(parent!.Parent);
+                    SetIsCustom(parent.Parent);
                     (parent.Methods ??= []).Add(name);
                     continue;
                 }
@@ -245,6 +262,7 @@ public static class SelectorBuilder
 
         public bool IsDynamic { get; set; }
         public bool IsEnumerable { get; set; }
+        public bool IsEnumerableEnumerable { get; set; }
 
         public string? Name { get; set; }
         public string? Method { get; set; }

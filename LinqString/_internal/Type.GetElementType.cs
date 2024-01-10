@@ -7,13 +7,18 @@ internal static partial class TypeExt
         if (type.IsArray)
             return type.GetElementType();
 
-        if (type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == _iEnumerable1)
+        if (type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == Types.IEnumerable1)
             return type.GenericTypeArguments[0];
 
-        return type.GetInterface(_iEnumerable1.Name)?.GenericTypeArguments[0];
+        var iEnumerable1 = type.GetInterface(Types.IEnumerable1.Name);
+
+        if (iEnumerable1 != null)
+            return iEnumerable1.GenericTypeArguments[0];
+
+        if (Types.IEnumerable.IsAssignableFrom(type))
+            return typeof(object);
+
+        return null;
     }
-
-    static readonly Type _iEnumerable1 = typeof(IEnumerable<>);
-
 }
 

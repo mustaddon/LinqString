@@ -1,12 +1,11 @@
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace Tests;
 
-public class TestSelectÑascade
+public class TestSelectMulti
 {
     [Test]
-    public void Ñascade()
+    public void Multi()
     {
         var items = Enumerable.Range(0, 10).Select(x => x == 0 ? null : new
         {

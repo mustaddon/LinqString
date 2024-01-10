@@ -7,12 +7,12 @@
 	<LangVersion>latest</LangVersion>
 	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>..\LinqString.snk</AssemblyOriginatorKeyFile>
-	<AssemblyVersion>1.1.0</AssemblyVersion>
-	<FileVersion>1.1.0</FileVersion>
-	<Version>1.1.0</Version>
+	<AssemblyVersion>1.2.0</AssemblyVersion>
+	<FileVersion>1.2.0</FileVersion>
+	<Version>1.2.0</Version>
 	<Company></Company>
 	<Authors>Leonid Salavatov</Authors>
-	<Copyright>Leonid Salavatov 2023</Copyright>
+	<Copyright>Leonid Salavatov 2024</Copyright>
 	<PackageId>LinqString</PackageId>
 	<Product>LinqString</Product>
 	<Title>LinqString</Title>
