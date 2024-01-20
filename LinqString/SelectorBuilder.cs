@@ -115,7 +115,7 @@ public static class SelectorBuilder
                 else if ((field = sourceType.GetField(childNode.Name)) != null)
                     tmp = new(field.FieldType) { Name = childNode.Name, Member = field };
                 else
-                    continue;
+                    throw new KeyNotFoundException($"'{childNode.Name}' is not a member of type '{sourceType}'");
 
                 if (childNode.IsCustom)
                     FillData(ctx, tmp, childNode, childNode.IsFilled);
