@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
+	<TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<LangVersion>latest</LangVersion>
 	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>..\LinqString.snk</AssemblyOriginatorKeyFile>
-	<AssemblyVersion>1.2.2</AssemblyVersion>
-	<FileVersion>1.2.2</FileVersion>
-	<Version>1.2.2</Version>
+	<AssemblyVersion>1.2.3</AssemblyVersion>
+	<FileVersion>1.2.3</FileVersion>
+	<Version>1.2.3</Version>
 	<Company></Company>
 	<Authors>Leonid Salavatov</Authors>
 	<Copyright>Leonid Salavatov 2024</Copyright>
@@ -29,8 +29,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DynamicAnonymousType" Version="1.0.5" />
+    <PackageReference Include="DynamicAnonymousType" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net9.0'">
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
